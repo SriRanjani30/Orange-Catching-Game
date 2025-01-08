@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Catch the Falling Objects</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #87ceeb;
+            font-family: 'Arial', sans-serif;
+            overflow: hidden;
+        }
+
+        #gameArea {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-size: cover;
+            background-position: center;
+            overflow: hidden;
+        }
+
+        #basket {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            width: 300px;
+            height: 200px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            transform: translateX(-50%);
+        }
+
+        .fallingObject {
+            position: absolute;
+            top: 0;
+            width: 60px;
+            height: 60px;
+            background-size: contain;
+            background-repeat: no-repeat;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from {
+                transform: rotate(0deg);
+            }
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        #score {
+            position: absolute;
+            top: 10px;
+            left: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        #gameOver {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 20px 40px;
+            text-align: center;
+            border: 2px solid #333;
+            border-radius: 10px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        #gameOver h1 {
+            font-size: 32px;
+            margin: 0 0 10px;
+            color: #ff6347;
+        }
+
+        #gameOver button {
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #ff6347;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 0px 3px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        #gameOver button:hover {
+            background-color: #ff4500;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameArea" style="background-image: url('C:\\Users\\Agadish\\Documents\\VS Code\\Project 6\\Background.jpg');">
+        <div id="score">Score: 0</div>
+        <div id="basket" style="background-image: url('C:\\Users\\Agadish\\Documents\\VS Code\\Project 6\\Basket.png');"></div>
+        <div id="gameOver">
+            <h1>Game Over</h1>
+            <p>Your score: <span id="finalScore">0</span></p>
+            <button onclick="restartGame()">Play Again</button>
+        </div>
+    </div>
+
+    <script>
+        const gameArea = document.getElementById('gameArea');
+        const basket = document.getElementById('basket');
+        const scoreDisplay = document.getElementById('score');
+        const gameOverScreen = document.getElementById('gameOver');
+        const finalScore = document.getElementById('finalScore');
+
+        let score = 0;
+        let isGameOver = false;
+        let gameWidth = window.innerWidth;
+        let gameHeight = window.innerHeight;
+        let spawnInterval;
+        let spawnRate = 2000; 
+        const spawnDecrease = 100; 
+
+        window.addEventListener('resize', () => {
+            gameWidth = window.innerWidth;
+            gameHeight = window.innerHeight;
+        });
+        document.addEventListener('mousemove', (e) => {
+            if (!isGameOver) {
+                const basketX = e.clientX - basket.offsetWidth / 2;
+                basket.style.left = `${Math.min(Math.max(basketX, 0), gameWidth - basket.offsetWidth)}px`;
+;
+            }
+        });
+        function createFallingObject() {
+            if (isGameOver) return;
+
+            const object = document.createElement('div');
+            object.classList.add('fallingObject');
+            object.style.left = Math.random() * (gameWidth - 60) + 'px';
+            object.style.backgroundImage = "url('C://Users//Agadish//Documents//VS Code//Project 6//Orange.png')";
+            gameArea.appendChild(object);
+
+            let fallingSpeed = Math.random() * 3 + 3;
+
+            const fallInterval = setInterval(() => {
+                const objectTop = parseInt(window.getComputedStyle(object).top);
+                object.style.top = (objectTop + fallingSpeed) + 'px';
+
+               
+                const basketRect = basket.getBoundingClientRect();
+                const objectRect = object.getBoundingClientRect();
+
+                if (
+                    objectRect.bottom >= basketRect.top &&
+                    objectRect.left < basketRect.right &&
+                    objectRect.right > basketRect.left
+                ) {
+                    score++;
+                    scoreDisplay.textContent = `Score: ${score}`;
+                    clearInterval(fallInterval);
+                    object.remove();
+
+                    
+                    if (score % 10 === 0 && spawnRate > 500) {
+                        clearInterval(spawnInterval);
+                        spawnRate -= spawnDecrease;
+                        startSpawningObjects();
+                    }
+                }
+
+                
+                if (objectTop > gameHeight) {
+                    clearInterval(fallInterval);
+                    object.remove();
+                    endGame();
+                }
+            }, 20);
+        }
+
+        
+        function startSpawningObjects() {
+            spawnInterval = setInterval(createFallingObject, spawnRate);
+        }
+
+        
+        function endGame() {
+            isGameOver = true;
+            clearInterval(spawnInterval);
+            finalScore.textContent = score;
+            gameOverScreen.style.display = 'block';
+        }
+
+        
+        function restartGame() {
+            score = 0;
+            spawnRate = 2000; 
+            isGameOver = false;
+            scoreDisplay.textContent = `Score: 0`;
+            gameOverScreen.style.display = 'none';
+
+            
+            document.querySelectorAll('.fallingObject').forEach((object) => object.remove());
+
+            
+            startSpawningObjects();
+        }
+
+        startSpawningObjects();
+    </script>
+</body>
+</html>
